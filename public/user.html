@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Dashboard</title>
+</head>
+<body>
+    <h1>Welcome, User!</h1>
+
+    <!-- Search Section -->
+    Search Data:    <input type="text" id="searchInput" placeholder="Search by details">
+
+    <!-- Client Data Table -->
+    
+    <table border="1" id="clientTable">
+        <thead>
+            <tr>
+                <th>Client<br>Code</th>
+                <th>Client<br>Name</th>
+                <th>Closing<br>Balance</th>    
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+        // Function to fetch client data
+        function fetchClientData() {
+            fetch('/client-data')
+                .then(response => response.json())
+                .then(data => {
+                    const clientTableBody = document.getElementById('clientTable').querySelector('tbody');
+                    clientTableBody.innerHTML = '';
+
+                    data.forEach(row => {
+                        const tr = document.createElement('tr');
+                        // Create hyperlink for ClientCode
+                        tr.innerHTML = `
+                            <td>
+                                <a href="#" onclick="handleClientClick('${row.ClientCode}')">${row.ClientCode}</a>
+                            </td>
+                            <td>${row.ClientName}</td>
+                            <td>${row.vCLOBAL}</td>
+                        `;
+                        clientTableBody.appendChild(tr);
+                    });
+                });
+        }
+
+        // Handle Client Code Click
+        function handleClientClick(clientCode) {
+            // Open a new tab with the ledger page for the clicked code
+            const ledgerUrl = `/ledger.html?code=${clientCode}`;
+            window.open(ledgerUrl, '_blank');
+        }
+
+        // Function to filter the table in real time
+        function filterTable() {
+            const searchValue = document.getElementById('searchInput').value.toLowerCase();
+            const tableRows = document.getElementById('clientTable').querySelectorAll('tbody tr');
+
+            tableRows.forEach(row => {
+                const clientCode = row.cells[0].textContent.toLowerCase();
+                const clientName = row.cells[1].textContent.toLowerCase();
+
+                // Check if search value exists in either clientCode or clientName
+                if (clientCode.includes(searchValue) || clientName.includes(searchValue)) {
+                    row.style.display = ''; // Show the row
+                } else {
+                    row.style.display = 'none'; // Hide the row
+                }
+            });
+        }
+
+        // Event listener for real-time search
+        document.getElementById('searchInput').addEventListener('input', filterTable);
+
+        // Fetch data on page load
+        document.addEventListener('DOMContentLoaded', fetchClientData);
+    </script>
+</body>
+</html>

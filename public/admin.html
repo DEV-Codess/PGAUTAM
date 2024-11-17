@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+</head>
+
+<body>
+    <h1>Welcome, Admin!</h1>
+    <h2>Upload CSV Files</h2>
+    <input type="file" id="csvFile" accept=".csv" multiple>
+    <button onclick="uploadCSV()">Upload Files</button>
+
+    <script>
+        // Function to upload and parse multiple CSV files
+        function uploadCSV() {
+            console.log("Upload function triggered");
+            const fileInput = document.getElementById('csvFile');
+            const files = fileInput.files;
+
+            if (!files.length) {
+                alert("Please select at least one CSV file.");
+                return;
+            }
+
+            const validTables = ['ACC', 'EXP', 'MASTER1', 'MISC', 'TAXREG'];
+
+            Array.from(files).forEach(file => {
+                const tableName = file.name.split('.')[0].toUpperCase();
+
+                if (!validTables.includes(tableName)) {
+                    alert(`Invalid table name in file: ${file.name}`);
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function (event) {
+                    const csvData = event.target.result;
+                    const parsedData = parseCSVData(csvData);
+                    console.log(`Parsed Data for file ${file.name}:`, parsedData);
+                    sendCSVDataToServer(parsedData, tableName);
+                };
+                reader.readAsText(file);
+            });
+        }
+
+        // Parse CSV data into an array of objects
+        function parseCSVData(csvData) {
+            const rows = csvData.split('\n');
+            const data = [];
+            const headers = rows[0].split(',').map(header => header.trim());
+
+            rows.slice(1).forEach(row => {
+                const cols = row.split(',').map(col => col.trim());
+                if (cols.length > 1) {
+                    const rowData = {};
+                    headers.forEach((header, index) => {
+                        rowData[header] = cols[index] || null;
+                    });
+                    data.push(rowData);
+                }
+            });
+
+            return data;
+        }
+
+        // Send parsed CSV data to the server
+        function sendCSVDataToServer(data, table) {
+            console.log(`Sending data to server for table ${table}:`, data);
+            fetch(`/upload-csv/${table}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+                .then(response => response.text())
+                .then(message => {
+                    alert(`File uploaded for table ${table}: ${message}`);
+                })
+                .catch(error => console.error('Error:', error));
+        }
+    </script>
+</body>
+
+</html>

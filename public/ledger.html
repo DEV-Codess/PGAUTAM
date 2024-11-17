@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Ledger</title>
+    <style>
+        /* Define fixed widths for columns */
+        .net-total {
+            width: 15ch; /* Approximately 15 characters */
+            text-align: right; /* Default alignment for Net Total */
+        }
+        .balance {
+            width: 15ch; /* Approximately 20 characters */
+            text-align: right; /* Default alignment for positive balances */
+        }
+        .balance.red {
+            color: red;
+            text-align: left; /* Left alignment for negative balances */
+        }
+        .balance.green {
+            color: green;
+            text-align: right; /* Right alignment for positive balances */
+        }
+    </style>
+</head>
+<body>
+    <h1>Financial Ledger</h1>
+    <p>Date Range: From 01-04-2024 To 31-03-2025</p>
+    <p id="clientDetails"></p>
+
+    <!-- Data Table -->
+    <table border="1" id="ledgerTable">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Invoice<br>Number</th>
+                <th>Particulars</th>
+                <th>Net Total</th>
+                <th>Balance</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+        // Get the client code from the URL
+        const params = new URLSearchParams(window.location.search);
+        const clientCode = params.get('code'); // Extract 'code' from the URL
+
+        // Fetch ledger details
+        function fetchLedgerDetails() {
+            fetch(`/ledger/${clientCode}`) // Pass the extracted code to the endpoint
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('No data found for the given code.');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const clientDetails = data.clientDetails;
+                    const ledger = data.ledger;
+
+                    // Initialize balance with Opening Balance
+                    let bal = Number(clientDetails.OpeningBalance) || 0; // Ensure balance starts as a valid number
+
+                    // Display client details
+                    document.getElementById('clientDetails').innerHTML = `
+                        <strong>Code:</strong> ${clientDetails.Code}<br>
+                        <strong>Name:</strong> ${clientDetails.Name}<br>
+                        <strong>Address:</strong> ${clientDetails.Address}<br>
+                        <strong>Phone:</strong> ${clientDetails.PhoneNumber}
+                    `;
+
+                    // Populate the ledger table
+                    const tableBody = document.getElementById('ledgerTable').querySelector('tbody');
+                    tableBody.innerHTML = ''; // Clear table body
+
+                    // Determine style for Opening Balance
+                    const openingBalanceStyle = bal < 0 
+                        ? 'balance red' 
+                        : 'balance green';
+
+                    // Add opening balance row
+                    const openingBalanceRow = document.createElement('tr');
+                    openingBalanceRow.innerHTML = `
+                        <td colspan="2"></td>
+                        <td><strong>Opening Balance:</strong></td>
+                        <td class="${openingBalanceStyle}">${Math.abs(bal).toFixed(2)}</td>
+                        <td class="${openingBalanceStyle}">${Math.abs(bal).toFixed(2)}</td>
+                    `;
+                    tableBody.appendChild(openingBalanceRow);
+
+                    // Add ledger data rows
+                    ledger.forEach(row => {
+                        const tr = document.createElement('tr');
+
+                        // Ensure NetTotal is a valid number
+                        const netTotal = Number(row.NetTotal) || 0;
+
+                        // Update balance based on DBCR value
+                        if (row.DebitCredit === 'C') {
+                            bal += netTotal;
+                        } else if (row.DebitCredit === 'D') {
+                            bal -= netTotal;
+                        }
+
+                        // Apply font color based on DBCR value
+                        const fontColor = row.DebitCredit === 'C' ? 'green' : 'red';
+                        tr.style.color = fontColor;
+                        // Determine class for balance
+                        const balanceClass = bal < 0 ? 'balance red' : 'balance green';
+
+                        // Determine alignment for NetTotal
+                        const netTotalAlignment = row.DebitCredit === 'C' ? 'right' : 'left';
+
+                        // Add row data
+                        tr.innerHTML = `
+                            <td>${row.Date || 'N/A'}</td> <!-- Date already formatted -->
+                            <td>${row.InvoiceNumber || 'N/A'}</td>
+                            <td>${row.OtherCodeName || 'N/A'}</td>
+                            
+                            <td class="net-total" style="text-align: ${netTotalAlignment};">${netTotal.toFixed(2)}</td>
+                            <td class="${balanceClass}">${Math.abs(bal).toFixed(2)}</td>
+                        `;
+                        tableBody.appendChild(tr);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching ledger data:', error);
+                    document.getElementById('clientDetails').innerText = error.message;
+                });
+        }
+
+
+        // Fetch and display ledger details on page load
+        document.addEventListener('DOMContentLoaded', fetchLedgerDetails);
+    </script>
+</body>
+</html>
