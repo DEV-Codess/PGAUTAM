@@ -114,6 +114,8 @@ app.post('/upload-csv/:table', (req, res) => {
 });
 
 
+
+
 // Fetch data for users (example: from ACC table)
 app.get('/data', (req, res) => {
     connection.query('SELECT * FROM ACC', (err, results) => {
@@ -160,7 +162,7 @@ app.get('/ledger/:code', (req, res) => {
             (SELECT DESCR FROM MASTER1 WHERE PARTYCODE = acc.OTHERCODE) AS OtherCodeName -- Name of OtherCode
         FROM ACC acc
         LEFT JOIN MASTER1 m ON m.PARTYCODE = acc.PARTYCODE
-        WHERE acc.PARTYCODE = ? AND acc.INVDATE >= '2020-04-01'; -- Adjust as needed based on format
+        WHERE acc.PARTYCODE = ? AND acc.INVDATE >= '2024-04-01'; -- Adjust as needed based on format
     `;
     // acc.OTHERCODE AS OtherCode,
     connection.query(query, [clientCode], (err, results) => {
@@ -219,7 +221,7 @@ function createTables() {
                 BALAMT DECIMAL(10, 2),
                 SHARE DECIMAL(10, 2),
                 MODPAYB VARCHAR(255),
-                RET1 DECIMAL(10, 2),
+                RET1 VARCHAR(255),
                 SAMT DECIMAL(10, 2),
                 SRT VARCHAR(255),
                 EDC DECIMAL(10, 2),
@@ -261,7 +263,10 @@ function createTables() {
                 GSTFILE VARCHAR(255),
                 TOTCB DECIMAL(10, 2),
                 TOTCR DECIMAL(10, 2),
-                TOTTDS DECIMAL(10, 2)
+                TOTTDS DECIMAL(10, 2),
+                ACNO VARCHAR(255),
+                ACDT DATETIME,
+                IRN VARCHAR(255)
             `
         },
         {
@@ -349,33 +354,34 @@ function createTables() {
             name: 'MISC',
             schema: `
                 ID INT AUTO_INCREMENT PRIMARY KEY,
-                INVNO VARCHAR(255),
-                INVDATE DATE,
-                PARTYCODE VARCHAR(255),
-                SRNO INT,
-                BILLNO VARCHAR(255),
-                BILLDATE DATE,
-                PRODCODE VARCHAR(255),
-                DESCRIPTIO TEXT,
-                DESC1 TEXT,
-                POSITION VARCHAR(255),
-                INSERT_DT DATE,
-                SIZE1 DECIMAL(10, 2),
-                SIZE2 DECIMAL(10, 2),
-                SIZE_HEAD VARCHAR(255),
-                TOT_SPACE DECIMAL(10, 2),
-                RATE_DIFF DECIMAL(10, 2),
-                TRAD_DISC DECIMAL(10, 2),
-                NETPRICE DECIMAL(10, 2),
-                AMOUNT DECIMAL(10, 2),
-                SUBTOTAL DECIMAL(10, 2),
-                POSTFLG BOOLEAN,
-                SERV_PER DECIMAL(5, 2),
-                RSIZE1 DECIMAL(10, 2),
-                RSIZE2 DECIMAL(10, 2),
-                RRATE DECIMAL(10, 2),
-                AAA VARCHAR(255),
-                RNO VARCHAR(255)
+                INVNO VARCHAR(255),          -- Invoice number
+                INVDATE DATE,                -- Invoice date
+                PARTYCODE VARCHAR(255),      -- Party code
+                SRNO INT,                    -- Serial number
+                BILLNO VARCHAR(255),         -- Bill number
+                BILLDATE DATE,               -- Bill date
+                PRODCODE VARCHAR(255),       -- Product code
+                DESCRIPTIO TEXT,             -- Description
+                DESC1 TEXT,                  -- Additional description
+                POSITION VARCHAR(255),       -- Position
+                INSERT_DT DATE,              -- Insert date
+                SIZE1 DECIMAL(10, 2),        -- Size dimension 1
+                SIZE2 DECIMAL(10, 2),        -- Size dimension 2
+                SIZE_HEAD VARCHAR(255),      -- Size heading
+                TOT_SPACE DECIMAL(10, 2),    -- Total space
+                RATE_DIFF DECIMAL(10, 2),    -- Rate difference
+                TRAD_DISC DECIMAL(10, 2),    -- Trade discount
+                NETPRICE DECIMAL(10, 2),     -- Net price
+                AMOUNT DECIMAL(10, 2),       -- Amount
+                SUBTOTAL DECIMAL(10, 2),     -- Subtotal
+                POSTFLG BOOLEAN,             -- Posting flag
+                SERV_PER DECIMAL(5, 2),      -- Service percentage
+                RSIZE1 DECIMAL(10, 2),       -- Resized dimension 1
+                RSIZE2 DECIMAL(10, 2),       -- Resized dimension 2
+                RRATE DECIMAL(10, 2),        -- Revised rate
+                AAA VARCHAR(255),            -- Additional field AAA
+                RNO VARCHAR(255),            -- RNO field
+                FC VARCHAR(255)              -- New field FC (e.g., Free Code or any relevant description)
             `
         },
         {
